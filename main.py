@@ -6,7 +6,6 @@ import advertiserSocket
 
 
 # TODO: Try catch to ensure that reaper is open. If not open then continue to try
-
 HEADER = 64
 PORT = 4545
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # SOCK_DGRAM is UDP, SOCK_STREAM is TCP. Try SOCK_STREAM to see if it works.
@@ -22,6 +21,22 @@ project = reapy.Project()
 advertiser = advertiserSocket.AdvertiserSocket()
 
 
+def reaper_perform_id(id):
+    action_id = reapy.get_command_id(id)  # converts the action id string to an int.
+    reapy.perform_action(action_id)
+
+
+# PUT YOUR REAPER FUNCTIONS HERE  - Use reaper_perform_id if the function needs a command id
+reaper_commands = {
+    "reaper hello": reapy.print,
+    "play": project.play,
+    "stop": project.stop,
+    "rewind": reaper_perform_id,
+    "mainOnCommand": reaper_perform_id,
+    "send message": reapy.print,
+}
+
+
 def send(msg):
     message = msg.encode(FORMAT)
     msg_length = len(message)
@@ -33,26 +48,21 @@ def send(msg):
 
 
 def sort_data(data):
-
     # TODO: If connection is not established an icon should be on the tablet showing no connection symbol.
-    if data == "data":
-        d = data
-        conn.send(bytes(d, "utf-8"))
-    elif data == "reaper hello":
-        reapy.print('Hello from flutter')
-    elif data == "play":
-        project.play()
-    elif data == "pause":
-        project.pause()
-    elif data == "stop":
-        project.stop()
-    elif data == "rewind":
-        action_id = reapy.get_command_id(
-            "40084")  # converts the action id string to an int.
-        reapy.perform_action(action_id)
-    elif data == "mainOnCommand":
-        action_id = reapy.get_command_id("_f518c91fefc442f296feb866ca286b6a") # converts the action id string to an int.
-        reapy.perform_action(action_id)
+    data = data.split(':')
+    try:
+        if data[0] in reaper_commands:
+            if len(data) == 1: # reaper commands with no parameters
+                reaper_commands[data[0]]()
+            elif len(data) == 2:  # reaper commands with 1 parameter
+                if data[0] == "reaper hello":
+                    reapy.print('Hello from flutter')
+                else:
+                    reaper_commands[data[0]](data[1])
+            elif len(data) == 2:  # reaper commands with 2 parameters
+                reaper_commands[data[0]](data[1], data[2])
+    except:
+        print("Error")
 
 
 def handle_client(conn, addr):
@@ -60,7 +70,6 @@ def handle_client(conn, addr):
     connected = True
     advertiserThread = threading.Thread(target=advertiser.stopAdvertisingApplication)
     advertiserThread.start()
-    # TODO: When connection is made a message should be sent back to the tablet to go to the start page.
     # conn.send(bytes("connection established", "utf-8"))
     while connected:
         # now we are connected to the other flutter app.
@@ -77,17 +86,17 @@ def handle_client(conn, addr):
     advertiserThread = threading.Thread(target=advertiser.advertiseApplication)
     advertiserThread.start()
 
+
 def start():
     server.listen()
     advertiserThread = threading.Thread(target=advertiser.advertiseApplication)
     advertiserThread.start()
     print(f"[LISTENING] Server is listening on {SERVER}")
-    print("HEY")
     while True:
         # Accept connections from the outside
 
         conn, addr = server.accept()
-        print("Hello")
+        print("Main socket ready")
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
         print(f"[ACTIVE CONNECTIONS] {threading.activeCount() - 1}")

@@ -23,12 +23,12 @@ class AdvertiserSocket:
         print(f'Python Server address = {SERVER}')
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind(ADDR)
-        print(f"[LISTENING] Ad Server is listening on {SERVER}")
+        print(f"[LISTENING] Advertiser Server is listening on {SERVER}")
         while self.applicationAvailable:
             server.listen()
             # Accept connections from the outside
             conn, addr = server.accept()
-            print("YOOO")
+            print("Advertiser Socket ready")
 
 
 
