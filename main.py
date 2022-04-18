@@ -2,7 +2,75 @@ import reapy
 from reapy import reascript_api as RPR
 import socket
 import threading
-import advertiserSocket
+
+
+ADVERTISER_PORT = 3595
+advertiser_conn = ''
+
+
+class AdvertiserSocket:
+    applicationAvailable = True
+
+    def advertiseApplication(self):
+        print("AdvertiseApplication")
+        self.applicationAvailable = True
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        SERVER = s.getsockname()[0]
+        s.close()
+        ADDR = (SERVER, ADVERTISER_PORT)
+        print(f'Python Server address = {SERVER}')
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(ADDR)
+        print(f"[LISTENING] Advertiser Server is listening on {SERVER}")
+        while self.applicationAvailable:
+            server.listen()
+            # Accept connections from the outside
+            conn, addr = server.accept()
+            print("Advertiser Socket ready")
+
+
+
+
+    def stopAdvertisingApplication(self):
+        self.applicationAvailable = False
+        pass
+
+    def __openSocket(self):
+        pass
+
+    def __closeSocket(self):
+        pass
+
+    def __sendMsg(self, msg):
+        message = msg.encode(FORMAT)
+        msg_length = len(message)
+        send_length = str(msg_length).encode(FORMAT)
+        send_length += b' ' * (HEADER - len(send_length))
+        advertiser_conn.send(send_length)
+        advertiser_conn.send(message)
+        print(advertiser_conn.recv(64).decode(FORMAT))
+        pass
+
+    def __recieveMsg(self, data):
+        # TODO: If connection is not established an icon should be on the tablet showing no connection symbol.
+        if data == "data":
+            d = data
+            advertiser_conn.send(bytes(d, "utf-8"))
+
+    def handle_client(conn, addr):
+        print(f"[NEW CONNECTION] {conn} Address = {addr} connected.")
+        connected = True
+        # TODO: When connection is made a message should be sent back to the tablet to go to the start page.
+        # conn.send(bytes("connection established", "utf-8"))
+        while connected:
+            # now we are connected to the other flutter app.
+            data = conn.recv(1024).decode()
+            print(data)
+        conn.close()
+
+
+
 
 
 # TODO: Try catch to ensure that reaper is open. If not open then continue to try
@@ -18,7 +86,7 @@ DISCONNECT_MESSAGE = "!DISCONNECT"
 print(f'Python Server address = {SERVER}')
 conn = ''
 project = reapy.Project()
-advertiser = advertiserSocket.AdvertiserSocket()
+advertiser = AdvertiserSocket()
 
 
 def reaper_perform_id(id):
